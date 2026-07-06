@@ -38,12 +38,57 @@ function czysc(s, max) {
   return String(s || '').replace(/\s+/g, ' ').trim().slice(0, max);
 }
 
+const PANEL_HTML = `<!DOCTYPE html>
+<html lang="pl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gospodarz tablicy</title><meta name="robots" content="noindex">
+<style>
+  body{font-family:system-ui,sans-serif;background:#F3F4EE;color:#24322B;max-width:640px;margin:0 auto;padding:20px}
+  h1{font-size:1.4rem}
+  input{width:100%;padding:10px;border:1.5px solid #24322B;border-radius:8px;font-size:1rem;box-sizing:border-box}
+  .kartka{background:#FBFBF7;border:1.5px solid #24322B;border-radius:10px;padding:14px;margin:12px 0}
+  .kartka b{display:block;margin-bottom:4px}
+  .meta{font-size:.8rem;opacity:.65;margin-top:6px}
+  button{background:#BF4630;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:.9rem;cursor:pointer;margin-top:8px}
+  .ok{color:#38604D;font-weight:600}
+</style></head><body>
+<h1>🏡 Gospodarz tablicy</h1>
+<p>Klucz gospodarza (zapamięta się na tym urządzeniu):</p>
+<input id="klucz" type="password" placeholder="wklej klucz">
+<div id="lista"></div>
+<script>
+  const API = location.origin;
+  const pole = document.getElementById('klucz');
+  pole.value = localStorage.getItem('klucz_gospodarza') || '';
+  pole.addEventListener('change', () => localStorage.setItem('klucz_gospodarza', pole.value.trim()));
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  async function odswiez(){
+    const r = await fetch(API + '/ogloszenia');
+    const d = await r.json();
+    document.getElementById('lista').innerHTML = d.ogloszenia.map(k =>
+      '<div class="kartka"><b>' + esc(k.tytul) + '</b>' + esc(k.tresc) +
+      '<div class="meta">#' + k.id + ' · ' + esc(k.kategoria) + ' · ' + esc(k.podpis || 'bez podpisu') + ' · ❤ ' + k.serca + ' · ' + esc(k.created_at) + '</div>' +
+      '<button onclick="zdejmij(' + k.id + ')">Zdejmij kartkę</button></div>').join('') || '<p>Tablica pusta.</p>';
+  }
+  async function zdejmij(id){
+    if (!confirm('Zdjąć kartkę #' + id + '?')) return;
+    const r = await fetch(API + '/ogloszenia/' + id, { method:'DELETE', headers:{'X-Admin-Key': pole.value.trim()} });
+    const d = await r.json();
+    if (d.ok){ odswiez(); } else { alert(d.blad || 'Nie wyszło.'); }
+  }
+  odswiez();
+</script></body></html>`;
+
 export default {
   async fetch(req, env) {
     const url = new URL(req.url);
     const path = url.pathname.replace(/\/+$/, '') || '/';
 
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(req) });
+
+    // GET /gospodarz — panel moderacji (klucz sprawdza dopiero DELETE)
+    if (req.method === 'GET' && path === '/gospodarz') {
+      return new Response(PANEL_HTML, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+    }
 
     // GET /ogloszenia — lista aktualnych kartek
     if (req.method === 'GET' && path === '/ogloszenia') {
