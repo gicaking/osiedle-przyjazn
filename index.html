@@ -176,7 +176,58 @@
   }
   .karteczka h3{font-family:'Caveat',cursive;font-size:1.5rem;font-weight:700;color:var(--smola);margin-bottom:4px}
   .karteczka p{font-size:.93rem;line-height:1.5}
+  .karteczka .kat{font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--sosna);opacity:.75}
+  .karteczka .stopka-kartki{display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:8px}
+  .karteczka .podpis{font-family:'Caveat',cursive;font-size:1.1rem;color:var(--smola);opacity:.8}
+  .karteczka .wiek{font-size:.78rem;opacity:.6}
+  .karteczka .kontakt-linia{font-size:.82rem;margin-top:6px;opacity:.8;word-break:break-word}
+  .serce{
+    background:none;border:none;cursor:pointer;font-size:1rem;
+    font-family:'Work Sans',sans-serif;color:var(--okiennica);padding:4px 6px;border-radius:8px;
+  }
+  .serce:hover{background:rgba(191,70,48,.1)}
+  .serce.dane{transform:scale(1.15);transition:transform .2s}
   .tablica-stopka{margin-top:20px;font-size:.95rem;max-width:52em}
+
+  /* ---------- powieszenie kartki ---------- */
+  .tablica-akcje{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 22px}
+  .btn-powies{
+    font-family:'Fraunces',serif;font-weight:700;font-size:1.1rem;cursor:pointer;
+    background:#F2C94C;color:var(--smola);border:2px solid var(--smola);border-radius:12px;
+    padding:12px 22px;box-shadow:4px 4px 0 var(--smola);transition:transform .12s, box-shadow .12s;
+  }
+  .btn-powies:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--smola)}
+  .btn-powies:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--smola)}
+  .chipy{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{
+    font-family:'Work Sans',sans-serif;font-size:.85rem;font-weight:500;cursor:pointer;
+    background:var(--papier);border:1.5px solid var(--smola);border-radius:999px;padding:6px 14px;color:var(--smola);
+  }
+  .chip.aktywny{background:var(--sosna);color:var(--tynk);border-color:var(--sosna)}
+  dialog.kartka-form{
+    border:2px solid var(--smola);border-radius:14px;background:#FDF6DC;
+    padding:28px;max-width:440px;width:92vw;box-shadow:8px 8px 0 rgba(36,50,43,.3);
+  }
+  dialog.kartka-form::backdrop{background:rgba(36,50,43,.45)}
+  dialog.kartka-form h3{font-family:'Fraunces',serif;font-size:1.4rem;margin-bottom:4px}
+  dialog.kartka-form .pod{font-family:'Caveat',cursive;font-size:1.25rem;color:var(--okiennica);margin-bottom:14px}
+  dialog.kartka-form label{display:block;font-size:.85rem;font-weight:600;margin:12px 0 4px}
+  dialog.kartka-form input, dialog.kartka-form textarea, dialog.kartka-form select{
+    width:100%;font-family:'Work Sans',sans-serif;font-size:.95rem;color:var(--smola);
+    background:var(--papier);border:1.5px solid var(--smola);border-radius:8px;padding:9px 10px;
+  }
+  dialog.kartka-form textarea{min-height:96px;resize:vertical}
+  .form-przyciski{display:flex;gap:10px;margin-top:18px}
+  .btn-drugi{
+    font-family:'Work Sans',sans-serif;font-size:.95rem;cursor:pointer;background:none;
+    border:1.5px solid var(--smola);border-radius:10px;padding:10px 16px;color:var(--smola);
+  }
+  .miod-pole{position:absolute;left:-9999px;opacity:0}
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%) rotate(-1deg);
+    background:var(--sosna);color:var(--tynk);font-family:'Caveat',cursive;font-size:1.4rem;
+    padding:12px 26px;border-radius:12px;box-shadow:4px 4px 0 rgba(36,50,43,.3);z-index:50;
+  }
 
   /* ---------- kuznia ---------- */
   .kuznia-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
@@ -395,9 +446,20 @@
     <div class="sekcja-head reveal">
       <h2>Tablica sąsiedzka</h2>
       <svg class="squiggle" viewBox="0 0 190 14" aria-hidden="true"><path d="M4 8 q12 -8 24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0" fill="none" stroke="#BF4630" stroke-width="3.5" stroke-linecap="round"/></svg>
-      <p>Nasza wersja osiedlowej gabloty. Karteczki wieszają sąsiedzi, dla sąsiadów.</p>
+      <p>Nasza wersja osiedlowej gabloty. Karteczki wieszają sąsiedzi, dla sąsiadów. Masz coś do ogłoszenia, oddania, polecenia? Powieś kartkę, to zajmuje minutę.</p>
     </div>
-    <div class="deska-tablicy reveal">
+    <div class="tablica-akcje reveal">
+      <button class="btn-powies" id="btn-powies">📌 Powieś kartkę</button>
+      <div class="chipy" id="chipy" role="group" aria-label="Filtry kategorii">
+        <button class="chip aktywny" data-kat="wszystkie">Wszystkie</button>
+        <button class="chip" data-kat="wydarzenie">Wydarzenia</button>
+        <button class="chip" data-kat="wymiana">Oddam i wymienię</button>
+        <button class="chip" data-kat="szukam">Szukam</button>
+        <button class="chip" data-kat="polecam">Polecam</button>
+        <button class="chip" data-kat="inne">Inne</button>
+      </div>
+    </div>
+    <div class="deska-tablicy reveal" id="deska">
       <div class="karteczka">
         <h3>Śpiewanie przy ognisku</h3>
         <p>Piątek po zmroku, podwórko przy dużym klonie. Gitara będzie, śpiewniki będą, przynieś tylko głos i coś na ruszt.</p>
@@ -423,7 +485,35 @@
         <p>To miejsce czeka na Twoje ogłoszenie. Zaczep nas na podwórku albo zostaw kartkę na płocie, powiesimy ją też tutaj.</p>
       </div>
     </div>
-    <p class="tablica-stopka reveal">Na razie tablicę prowadzimy ręcznie, po sąsiedzku. Pracujemy nad wersją, na której każdy powiesi kartkę sam, prosto z telefonu.</p>
+    <p class="tablica-stopka reveal">Kartki wiszą 60 dni, potem grzecznie spadają. Gospodarz tablicy zdejmuje tylko to, co nie pasuje do ducha Przyjaźni. Zero kont, zero haseł, po sąsiedzku.</p>
+
+    <dialog class="kartka-form" id="dialog-kartka">
+      <h3>Nowa kartka na tablicę</h3>
+      <p class="pod">pisz jak do sąsiada, bo do sąsiada piszesz</p>
+      <form id="form-kartka">
+        <label for="f-tytul">Tytuł</label>
+        <input id="f-tytul" name="tytul" maxlength="60" required minlength="3" placeholder="np. Oddam rower dziecięcy">
+        <label for="f-tresc">Treść</label>
+        <textarea id="f-tresc" name="tresc" maxlength="400" required minlength="10" placeholder="Co, gdzie, kiedy. Krótko i po ludzku."></textarea>
+        <label for="f-kategoria">Kategoria</label>
+        <select id="f-kategoria" name="kategoria">
+          <option value="wydarzenie">Wydarzenie</option>
+          <option value="wymiana">Oddam / wymienię</option>
+          <option value="szukam">Szukam</option>
+          <option value="polecam">Polecam / reklamuję</option>
+          <option value="inne" selected>Coś innego</option>
+        </select>
+        <label for="f-podpis">Podpis (nieobowiązkowy)</label>
+        <input id="f-podpis" name="podpis" maxlength="40" placeholder="np. Kasia spod piątki">
+        <label for="f-kontakt">Kontakt (nieobowiązkowy, będzie widoczny publicznie)</label>
+        <input id="f-kontakt" name="kontakt" maxlength="80" placeholder="np. telefon, mail albo: zapukaj do zielonego domku">
+        <input class="miod-pole" name="miod" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <div class="form-przyciski">
+          <button type="submit" class="btn-powies">Wieszam!</button>
+          <button type="button" class="btn-drugi" id="btn-anuluj">Jednak nie</button>
+        </div>
+      </form>
+    </dialog>
   </div>
 </section>
 
@@ -450,8 +540,8 @@
       <div class="pomysl reveal">
         <span class="ikona" aria-hidden="true">💬</span>
         <h3>Sąsiedzki komunikator</h3>
-        <p>Jedno miejsce na szybkie wieści: kto organizuje ognisko, komu trzeba pomóc przy zakupach, gdzie w sobotę gra muzyka.</p>
-        <span class="status">projektujemy formę</span>
+        <p>Jedno miejsce na szybkie wieści: kto organizuje ognisko, komu trzeba pomóc przy zakupach, gdzie w sobotę gra muzyka. Pierwszy krok już wisi wyżej: Tablica sąsiedzka działa naprawdę.</p>
+        <span class="status">wykute! kujemy dalej</span>
       </div>
     </div>
   </div>
@@ -472,6 +562,113 @@
     entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('widoczne'); obs.unobserve(e.target);} });
   },{threshold:.12});
   document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+
+  /* ---------- tablica sąsiedzka ---------- */
+  const API = 'https://api.osiedleprzyjazn.waw.pl';
+  const KATEGORIE_NAZWY = {wydarzenie:'Wydarzenie', wymiana:'Oddam / wymienię', szukam:'Szukam', polecam:'Polecam', inne:'Coś innego'};
+  let kartki = [];
+  let filtr = 'wszystkie';
+
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  function wiek(iso){
+    const dni = Math.floor((Date.now() - new Date(iso.replace(' ','T') + 'Z')) / 864e5);
+    if (dni <= 0) return 'wisi od dziś';
+    if (dni === 1) return 'wisi od wczoraj';
+    return 'wisi ' + dni + ' dni';
+  }
+
+  function rysujTablice(){
+    const deska = document.getElementById('deska');
+    const widoczne = kartki.filter(k => filtr === 'wszystkie' || k.kategoria === filtr);
+    if (!widoczne.length){
+      deska.innerHTML = '<div class="karteczka"><h3>Pusto w tej kategorii</h3><p>Bądź pierwszą osobą, która coś tu powiesi. Kliknij Powieś kartkę.</p></div>';
+      return;
+    }
+    const dane = new Set(JSON.parse(localStorage.getItem('serca') || '[]'));
+    deska.innerHTML = widoczne.map(k => `
+      <div class="karteczka">
+        <span class="kat">${esc(KATEGORIE_NAZWY[k.kategoria] || k.kategoria)}</span>
+        <h3>${esc(k.tytul)}</h3>
+        <p>${esc(k.tresc)}</p>
+        ${k.kontakt ? `<p class="kontakt-linia">📮 ${esc(k.kontakt)}</p>` : ''}
+        <div class="stopka-kartki">
+          <span class="podpis">${esc(k.podpis || 'sąsiad')}</span>
+          <span class="wiek">${wiek(k.created_at)}</span>
+          <button class="serce${dane.has(k.id) ? ' dane' : ''}" data-id="${k.id}" aria-label="Zostaw serce">❤ ${k.serca || ''}</button>
+        </div>
+      </div>`).join('');
+  }
+
+  async function zaladujTablice(){
+    try {
+      const r = await fetch(API + '/ogloszenia');
+      kartki = (await r.json()).ogloszenia;
+      rysujTablice();
+    } catch (e) { /* API niedostępne: zostają kartki statyczne */ }
+  }
+
+  document.getElementById('chipy').addEventListener('click', e => {
+    const chip = e.target.closest('.chip'); if (!chip) return;
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('aktywny'));
+    chip.classList.add('aktywny');
+    filtr = chip.dataset.kat;
+    rysujTablice();
+  });
+
+  document.getElementById('deska').addEventListener('click', async e => {
+    const btn = e.target.closest('.serce'); if (!btn) return;
+    const id = Number(btn.dataset.id);
+    const dane = new Set(JSON.parse(localStorage.getItem('serca') || '[]'));
+    if (dane.has(id)) return;
+    dane.add(id);
+    localStorage.setItem('serca', JSON.stringify([...dane]));
+    btn.classList.add('dane');
+    try {
+      const r = await fetch(`${API}/ogloszenia/${id}/serce`, {method:'POST'});
+      const d = await r.json();
+      if (d.ok){ btn.innerHTML = '❤ ' + d.serca; const k = kartki.find(x => x.id === id); if (k) k.serca = d.serca; }
+    } catch (e) {}
+  });
+
+  const dialog = document.getElementById('dialog-kartka');
+  document.getElementById('btn-powies').addEventListener('click', () => dialog.showModal());
+  document.getElementById('btn-anuluj').addEventListener('click', () => dialog.close());
+
+  function toast(txt){
+    const t = document.createElement('div');
+    t.className = 'toast'; t.textContent = txt;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3200);
+  }
+
+  document.getElementById('form-kartka').addEventListener('submit', async e => {
+    e.preventDefault();
+    const f = e.target;
+    const dane = Object.fromEntries(new FormData(f));
+    const przycisk = f.querySelector('button[type=submit]');
+    przycisk.disabled = true;
+    try {
+      const r = await fetch(API + '/ogloszenia', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(dane),
+      });
+      const d = await r.json();
+      if (d.ok){
+        f.reset(); dialog.close();
+        toast('Kartka wisi! Dziękujemy 📌');
+        await zaladujTablice();
+        document.getElementById('deska').firstElementChild?.scrollIntoView({behavior:'smooth', block:'center'});
+      } else {
+        toast(d.blad || 'Coś poszło nie tak, spróbuj jeszcze raz.');
+      }
+    } catch (err) {
+      toast('Nie udało się dosięgnąć tablicy. Spróbuj za chwilę.');
+    } finally { przycisk.disabled = false; }
+  });
+
+  zaladujTablice();
 </script>
 
 </body>

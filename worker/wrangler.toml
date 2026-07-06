@@ -1,0 +1,13 @@
+name = "tablica-przyjazn"
+main = "src/index.js"
+compatibility_date = "2026-07-01"
+workers_dev = false
+
+routes = [
+  { pattern = "api.osiedleprzyjazn.waw.pl", custom_domain = true }
+]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "tablica_przyjazn"
+database_id = "e495707c-8f54-4cb6-b605-b34b97ca0b01"
