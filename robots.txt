@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://gicaking.github.io/osiedle-przyjazn/sitemap.xml
+Sitemap: https://osiedleprzyjazn.waw.pl/sitemap.xml
