@@ -152,26 +152,44 @@
   .ratowniczka .hand{color:#F2C94C;font-size:1.45rem}
   .ratowniczka p{max-width:46em}
 
-  /* ---------- rights ---------- */
-  .prawa-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
-  .prawo{
+  /* ---------- kronikarz ---------- */
+  .kronikarz{background:var(--domek)}
+  .kronikarz .hand{color:#FBE7B2}
+
+  /* ---------- tablica ---------- */
+  .deska-tablicy{
+    background:var(--papier);border:3px solid var(--deska);border-radius:18px;
+    padding:34px 30px;box-shadow:6px 6px 0 var(--deska);
+    display:grid;grid-template-columns:repeat(3,1fr);gap:22px;
+  }
+  .karteczka{
+    background:#FDF6DC;border:1.5px solid #E4D5A3;border-radius:4px;
+    padding:20px 18px 16px;box-shadow:2px 3px 8px rgba(36,50,43,.14);
+    position:relative;transform:rotate(-1.2deg);
+  }
+  .karteczka:nth-child(2n){transform:rotate(1.4deg);background:#EAF1E4;border-color:#C9D8BE}
+  .karteczka:nth-child(3n){transform:rotate(-.6deg);background:#E9EFF4;border-color:#C4D4E0}
+  .karteczka::before{
+    content:"";position:absolute;top:-9px;left:50%;width:12px;height:12px;
+    margin-left:-6px;border-radius:50%;background:var(--okiennica);
+    box-shadow:0 1px 2px rgba(36,50,43,.35);
+  }
+  .karteczka h3{font-family:'Caveat',cursive;font-size:1.5rem;font-weight:700;color:var(--smola);margin-bottom:4px}
+  .karteczka p{font-size:.93rem;line-height:1.5}
+  .tablica-stopka{margin-top:20px;font-size:.95rem;max-width:52em}
+
+  /* ---------- kuznia ---------- */
+  .kuznia-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .pomysl{
     background:var(--papier);border:2px solid var(--smola);border-radius:14px;padding:24px;
     box-shadow:4px 4px 0 var(--okiennica);
   }
-  .prawo h3{font-family:'Fraunces',serif;font-size:1.2rem;margin-bottom:8px;color:var(--okiennica)}
-  .zastrzezenie{
-    margin-top:24px;font-size:.92rem;background:var(--papier);
-    border:2px dashed var(--sosna);border-radius:12px;padding:14px 18px;max-width:52em;
+  .pomysl .ikona{font-size:1.9rem;display:block;margin-bottom:10px}
+  .pomysl h3{font-family:'Fraunces',serif;font-size:1.25rem;margin-bottom:8px}
+  .pomysl .status{
+    display:inline-block;margin-top:12px;font-family:'Caveat',cursive;
+    font-size:1.25rem;color:var(--okiennica);transform:rotate(-1.5deg);
   }
-
-  /* ---------- help ---------- */
-  .pomoc-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
-  .pomoc{
-    background:var(--papier);border:2px solid var(--smola);border-radius:14px;padding:24px;
-    box-shadow:4px 4px 0 var(--domek);
-  }
-  .pomoc h3{font-family:'Fraunces',serif;font-size:1.2rem;margin-bottom:8px;color:var(--domek)}
-  .pomoc .info{font-size:.95rem;margin-top:8px}
 
   /* ---------- footer ---------- */
   footer{margin-top:70px;background:var(--smola);color:var(--tynk);padding:40px 0 46px}
@@ -191,7 +209,7 @@
     .hero-art{order:-1}
     .hero-art svg{max-width:300px}
     .liczby .wrap{grid-template-columns:repeat(2,1fr)}
-    .karty,.prawa-grid,.pomoc-grid{grid-template-columns:1fr}
+    .karty,.deska-tablicy,.kuznia-grid{grid-template-columns:1fr}
     .ratowniczka{grid-template-columns:1fr;text-align:center}
     .ratowniczka svg{margin:0 auto}
   }
@@ -205,8 +223,8 @@
     <ul>
       <li><a href="#historia">Historia</a></li>
       <li><a href="#ludzie">Ludzie stąd</a></li>
-      <li><a href="#prawa">Prawa lokatorów</a></li>
-      <li><a href="#pomoc">Pomoc</a></li>
+      <li><a href="#tablica">Tablica</a></li>
+      <li><a href="#kuznia">Kuźnia pomysłów</a></li>
     </ul>
   </div>
 </nav>
@@ -215,7 +233,7 @@
   <div class="wrap hero">
     <div>
       <span class="eyebrow">Warszawa · Jelonki · od 1952 roku</span>
-      <h1>Drewniane osiedle,<br>które <span class="green">nie da się</span> wymazać z mapy</h1>
+      <h1>Drewniane osiedle,<br>które <span class="green">śpiewa, rysuje</span> i pamięta</h1>
       <p class="lead">Domki wśród czterech tysięcy drzew, pół tysiąca sąsiadów i siedemdziesiąt lat historii. Mówią o nas, że jesteśmy inni. To prawda. I to komplement.</p>
       <span class="hand hero-note">tu się mieszka, zwiedza i odpoczywa. osiedle jest dla wszystkich!</span>
     </div>
@@ -303,13 +321,13 @@
       </div>
       <div class="sztacheta reveal">
         <span class="rok">2024</span>
-        <h3>Zabytek, ale niepewny jutra</h3>
-        <p>W maju kończy się zarząd Akademii Pedagogiki Specjalnej i teren przejmuje miasto. Dla części mieszkańców zaczyna się czas wypowiedzeń, umów na rok i niepewności, co dalej.</p>
+        <h3>Nowy rozdział</h3>
+        <p>W maju kończy się zarząd Akademii Pedagogiki Specjalnej i opiekę nad terenem przejmuje miasto. Osiedle wchodzi w nowy rozdział swojej historii, a mieszkańcy robią to, co umieją najlepiej: żyją tu dalej, razem.</p>
       </div>
       <div class="sztacheta reveal">
         <span class="rok">dziś</span>
-        <h3>Pół tysiąca sąsiadów pilnuje swojego domu</h3>
-        <p>Mieszkamy tu nadal. Śpiewamy, rysujemy, chodzimy na spotkania i uczymy się swoich praw. Ta strona jest częścią tej historii.</p>
+        <h3>Pół tysiąca sąsiadów i wspólne pomysły</h3>
+        <p>Mieszkamy tu nadal. Śpiewamy, rysujemy, nagrywamy wspomnienia i wieszamy karteczki na tablicy. Ta strona jest częścią tej historii.</p>
       </div>
     </div>
   </div>
@@ -355,65 +373,85 @@
         <p>Najmłodsza mieszkanka osiedla, obecnie trzy miesiące na służbie, została uroczyście namaszczona na Ratowniczkę Osiedla Przyjaźń. Zdjęć nie pokażemy, bo Ratowniczki pracują incognito. Możemy tylko zdradzić, że patrole odbywają się codziennie w pojeździe służbowym na czterech kołach z budką, raporty składane są językiem szyfrowanym, a morale sąsiadów po każdym patrolu wyraźnie rośnie. Osiedle, na którym rodzą się Ratowniczki, ma przyszłość.</p>
       </div>
     </div>
+
+    <div class="ratowniczka kronikarz reveal">
+      <svg viewBox="0 0 120 120" role="img" aria-label="Odznaka Kronikarza Osiedla, otwarta księga">
+        <circle cx="60" cy="60" r="50" fill="#FBE7B2" stroke="#24322B" stroke-width="4"/>
+        <path d="M28 46 q16 -8 32 0 v34 q-16 -8 -32 0 Z" fill="#FBFBF7" stroke="#24322B" stroke-width="3.5" stroke-linejoin="round"/>
+        <path d="M92 46 q-16 -8 -32 0 v34 q16 -8 32 0 Z" fill="#FBFBF7" stroke="#24322B" stroke-width="3.5" stroke-linejoin="round"/>
+        <path d="M35 54 q10 -4 20 0 M35 62 q10 -4 20 0 M35 70 q10 -4 20 0 M65 54 q10 -4 20 0 M65 62 q10 -4 20 0 M65 70 q10 -4 20 0" fill="none" stroke="#49789B" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      <div>
+        <span class="hand">a to nie koniec dobrych wieści</span>
+        <h3>Osiedle ma też swojego Kronikarza</h3>
+        <p>Najstarszy sąsiad osiedla pamięta czasy, o których my możemy tylko poczytać. Jego opowieści to żywa historia tego miejsca: kto mieszkał w którym domku, gdzie stało kino, jak brzmiały Jelonkalia. Szykujemy Archiwum Głosów, czyli nagrania wspomnień najstarszych mieszkańców, żeby te historie zostały z nami na zawsze. Od trzymiesięcznej Ratowniczki po Kronikarza, osiedle to wszystkie pokolenia naraz.</p>
+      </div>
+    </div>
   </div>
 </section>
 
-<section id="prawa">
+<section id="tablica">
   <div class="wrap">
     <div class="sekcja-head reveal">
-      <h2>Prawa lokatorów, czyli co każdy sąsiad wiedzieć powinien</h2>
+      <h2>Tablica sąsiedzka</h2>
       <svg class="squiggle" viewBox="0 0 190 14" aria-hidden="true"><path d="M4 8 q12 -8 24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0" fill="none" stroke="#BF4630" stroke-width="3.5" stroke-linecap="round"/></svg>
-      <p>Niepewność bierze się z niewiedzy. A wiedza jest po naszej stronie. Cztery rzeczy, które warto znać na pamięć.</p>
+      <p>Nasza wersja osiedlowej gabloty. Karteczki wieszają sąsiedzi, dla sąsiadów.</p>
     </div>
-    <div class="prawa-grid">
-      <div class="prawo reveal">
-        <h3>1. Eksmisja tylko z wyrokiem sądu</h3>
-        <p>Nikt nie może usunąć Cię z mieszkania bez prawomocnego wyroku sądu i komornika. Nawet jeśli nie masz umowy. Eksmisja "na bruk" jest w Polsce zakazana, a wyrzucanie lokatora siłą to naruszenie prawa, także wtedy, gdy robi to właściciel terenu.</p>
+    <div class="deska-tablicy reveal">
+      <div class="karteczka">
+        <h3>Śpiewanie przy ognisku</h3>
+        <p>Piątek po zmroku, podwórko przy dużym klonie. Gitara będzie, śpiewniki będą, przynieś tylko głos i coś na ruszt.</p>
       </div>
-      <div class="prawo reveal">
-        <h3>2. Lokal socjalny także bez umowy</h3>
-        <p>Sąd może przyznać prawo do najmu socjalnego nawet osobie zajmującej lokal bez tytułu prawnego, jeśli przemawiają za tym zasady współżycia społecznego. Długoletnie zamieszkiwanie, niskie dochody i brak innego lokum to argumenty, które sąd bierze pod uwagę.</p>
+      <div class="karteczka">
+        <h3>Plener rysunkowy</h3>
+        <p>Sobota rano, zbiórka przy domkach z czerwonymi okiennicami. Kredki dla dzieci mamy, sztalugi swoje.</p>
       </div>
-      <div class="prawo reveal">
-        <h3>3. Okres ochronny zimą</h3>
-        <p>Od 1 listopada do 31 marca nie wykonuje się eksmisji wobec osób, którym nie wskazano lokalu, do którego mają się przenieść. Zima chroni lokatora, a nie właściciela.</p>
+      <div class="karteczka">
+        <h3>Oddam sadzonki malin</h3>
+        <p>Rozrosły się przy płocie bardziej, niż planowałem. Do wzięcia od ręki, najlepiej z doniczką albo wiaderkiem.</p>
       </div>
-      <div class="prawo reveal">
-        <h3>4. Dokumenty to Twoja tarcza</h3>
-        <p>Zbieraj dowody zamieszkiwania: rachunki, korespondencję, potwierdzenia opłat. Nie podpisuj niczego pod presją i bez konsultacji z prawnikiem. Złóż wniosek o najem komunalny lub socjalny w dzielnicy, sam złożony wniosek jest argumentem w sądzie.</p>
+      <div class="karteczka">
+        <h3>Meldunki dla Ratowniczki</h3>
+        <p>Ratowniczka Osiedla przyjmuje zgłoszenia kotów do pogłaskania oraz kałuż do obserwacji. Kolejka bywa długa, prosimy o cierpliwość.</p>
+      </div>
+      <div class="karteczka">
+        <h3>Archiwum Głosów szuka uszu</h3>
+        <p>Nagrywamy wspomnienia najstarszych sąsiadów. Jeśli Twoja babcia, dziadek albo Ty macie historię z osiedla, zapraszamy do opowiedzenia jej.</p>
+      </div>
+      <div class="karteczka">
+        <h3>Twoja kartka</h3>
+        <p>To miejsce czeka na Twoje ogłoszenie. Zaczep nas na podwórku albo zostaw kartkę na płocie, powiesimy ją też tutaj.</p>
       </div>
     </div>
-    <p class="zastrzezenie reveal"><strong>Ważne:</strong> to nie jest porada prawna, tylko sąsiedzka ściąga. Każda sytuacja jest inna. Zanim podejmiesz decyzję, idź z dokumentami na bezpłatny dyżur prawny. Adresy znajdziesz poniżej.</p>
+    <p class="tablica-stopka reveal">Na razie tablicę prowadzimy ręcznie, po sąsiedzku. Pracujemy nad wersją, na której każdy powiesi kartkę sam, prosto z telefonu.</p>
   </div>
 </section>
 
-<section id="pomoc">
+<section id="kuznia">
   <div class="wrap">
     <div class="sekcja-head reveal">
-      <h2>Gdzie szukać pomocy</h2>
+      <h2>Kuźnia pomysłów</h2>
       <svg class="squiggle" viewBox="0 0 190 14" aria-hidden="true"><path d="M4 8 q12 -8 24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0" fill="none" stroke="#BF4630" stroke-width="3.5" stroke-linecap="round"/></svg>
-      <p>Nikt nie musi walczyć sam. Te organizacje pomagają lokatorom od lat i znają sytuację naszego osiedla.</p>
+      <p>Pomysł, by żyć. Tu kujemy rzeczy, które za jakiś czas staną się osiedlową codziennością. Iskry już lecą.</p>
     </div>
-    <div class="pomoc-grid">
-      <div class="pomoc reveal">
-        <h3>Warszawskie Stowarzyszenie Lokatorów</h3>
-        <p>Działa aktywnie na Osiedlu Przyjaźń. Organizuje spotkania mieszkańców, warsztaty o prawach lokatorów i wspiera sąsiadów w sporach z miastem.</p>
-        <p class="info">🌐 <a href="https://lokatorzy.org/category/osiedle-przyjazn/" rel="noopener">lokatorzy.org, dział Osiedle Przyjaźń</a></p>
+    <div class="kuznia-grid">
+      <div class="pomysl reveal">
+        <span class="ikona" aria-hidden="true">📻</span>
+        <h3>Radio Przyjaźń</h3>
+        <p>Osiedlowe radio internetowe: muzyka lokalnych zespołów, dźwięki do spokojnej pracy i opowieści z Archiwum Głosów między utworami.</p>
+        <span class="status">rozgrzewamy palenisko</span>
       </div>
-      <div class="pomoc reveal">
-        <h3>Komitet Obrony Lokatorów</h3>
-        <p>Bezpłatne porady dla lokatorów w trudnej sytuacji. Dyżury stacjonarne w każdą środę od 18:00 do 20:00.</p>
-        <p class="info">📍 ul. Wileńska 25, Warszawa<br>🌐 <a href="https://lokatorzy.info.pl/" rel="noopener">lokatorzy.info.pl</a></p>
+      <div class="pomysl reveal">
+        <span class="ikona" aria-hidden="true">🎙️</span>
+        <h3>Archiwum Głosów</h3>
+        <p>Nagrania wspomnień najstarszych mieszkańców, z Kronikarzem na czele. Żywa historia osiedla, opowiedziana głosami ludzi, którzy ją przeżyli.</p>
+        <span class="status">pierwsze iskry</span>
       </div>
-      <div class="pomoc reveal">
-        <h3>Nieodpłatna pomoc prawna m.st. Warszawy</h3>
-        <p>Darmowe punkty porad prawnych i poradnictwa obywatelskiego działają w każdej dzielnicy, stacjonarnie i telefonicznie.</p>
-        <p class="info">🌐 <a href="https://um.warszawa.pl/nieodplatnapomocprawna" rel="noopener">um.warszawa.pl/nieodplatnapomocprawna</a></p>
-      </div>
-      <div class="pomoc reveal">
-        <h3>Poradnik o prawach lokatorów</h3>
-        <p>Oficjalny poradnik miasta o ochronie praw lokatorów. Warto przeczytać zanim cokolwiek podpiszesz.</p>
-        <p class="info">📄 <a href="https://um.warszawa.pl/documents/39703/20908555/2020-08-20_poradnik_o_prawach_lokatorow+(1).pdf" rel="noopener">Pobierz poradnik (PDF)</a></p>
+      <div class="pomysl reveal">
+        <span class="ikona" aria-hidden="true">💬</span>
+        <h3>Sąsiedzki komunikator</h3>
+        <p>Jedno miejsce na szybkie wieści: kto organizuje ognisko, komu trzeba pomóc przy zakupach, gdzie w sobotę gra muzyka.</p>
+        <span class="status">projektujemy formę</span>
       </div>
     </div>
   </div>
