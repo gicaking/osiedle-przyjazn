@@ -450,6 +450,7 @@
     </div>
     <div class="tablica-akcje reveal">
       <button class="btn-powies" id="btn-powies">📌 Powieś kartkę</button>
+      <button class="btn-drugi" id="btn-podeslij">📣 Podeślij sąsiadowi</button>
       <div class="chipy" id="chipy" role="group" aria-label="Filtry kategorii">
         <button class="chip aktywny" data-kat="wszystkie">Wszystkie</button>
         <button class="chip" data-kat="wydarzenie">Wydarzenia</button>
@@ -632,6 +633,16 @@
       const d = await r.json();
       if (d.ok){ btn.innerHTML = '❤ ' + d.serca; const k = kartki.find(x => x.id === id); if (k) k.serca = d.serca; }
     } catch (e) {}
+  });
+
+  document.getElementById('btn-podeslij').addEventListener('click', async () => {
+    const dane = { title: 'Tablica sąsiedzka Osiedla Przyjaźń', text: 'Zajrzyj na naszą osiedlową tablicę ogłoszeń. Możesz też powiesić swoją kartkę!', url: 'https://osiedleprzyjazn.waw.pl/#tablica' };
+    if (navigator.share) {
+      try { await navigator.share(dane); } catch (e) {}
+    } else {
+      try { await navigator.clipboard.writeText(dane.url); toast('Adres skopiowany, wyślij sąsiadowi! 📣'); }
+      catch (e) { toast(dane.url); }
+    }
   });
 
   const dialog = document.getElementById('dialog-kartka');
