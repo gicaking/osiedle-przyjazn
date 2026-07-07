@@ -446,7 +446,7 @@
     <div class="sekcja-head reveal">
       <h2>Tablica sąsiedzka</h2>
       <svg class="squiggle" viewBox="0 0 190 14" aria-hidden="true"><path d="M4 8 q12 -8 24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0" fill="none" stroke="#BF4630" stroke-width="3.5" stroke-linecap="round"/></svg>
-      <p>Nasza wersja osiedlowej gabloty. Karteczki wieszają sąsiedzi, dla sąsiadów. Masz coś do ogłoszenia, oddania, polecenia? Powieś kartkę, to zajmuje minutę.</p>
+      <p>Nasza wersja osiedlowej gabloty. Karteczki wieszają sąsiedzi, dla sąsiadów. Masz coś do ogłoszenia, oddania, polecenia? Powieś kartkę, to zajmuje minutę. <span class="hand" id="licznik-kartek" style="font-size:1.3rem"></span></p>
     </div>
     <div class="tablica-akcje reveal">
       <button class="btn-powies" id="btn-powies">📌 Powieś kartkę</button>
@@ -605,6 +605,9 @@
       const r = await fetch(API + '/ogloszenia');
       kartki = (await r.json()).ogloszenia;
       rysujTablice();
+      const n = kartki.length;
+      const forma = n === 1 ? 'kartka' : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14)) ? 'kartki' : 'kartek';
+      document.getElementById('licznik-kartek').textContent = `Dziś wisi ${n} ${forma}!`;
     } catch (e) { /* API niedostępne: zostają kartki statyczne */ }
   }
 
