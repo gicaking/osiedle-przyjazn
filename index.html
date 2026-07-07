@@ -553,6 +553,7 @@
     <div>
       <span class="hand">do zobaczenia na osiedlu!</span>
       <p>Strona sąsiedzka, robiona po godzinach i z serca. Osiedle Przyjaźń, Warszawa.</p>
+      <p id="odwiedziny" aria-live="polite"></p>
     </div>
     <p>Historia osiedla za: <a href="https://pl.wikipedia.org/wiki/Osiedle_Przyja%C5%BA%C5%84_(Warszawa)" rel="noopener">Wikipedia</a></p>
   </div>
@@ -683,6 +684,19 @@
   });
 
   zaladujTablice();
+
+  (async () => {
+    try {
+      const nowa = !sessionStorage.getItem('wizyta');
+      const r = await fetch(API + '/wizyta', { method: nowa ? 'POST' : 'GET' });
+      if (nowa) sessionStorage.setItem('wizyta', '1');
+      const { dzis } = await r.json();
+      if (dzis > 0) {
+        const forma = dzis === 1 ? 'sąsiad zajrzał' : (dzis % 10 >= 2 && dzis % 10 <= 4 && (dzis % 100 < 12 || dzis % 100 > 14)) ? 'sąsiadów zajrzało' : 'sąsiadów zajrzało';
+        document.getElementById('odwiedziny').textContent = `Dziś ${dzis === 1 ? '' : dzis + ' '}${forma} na tę stronę. Miło, że jesteś!`;
+      }
+    } catch (e) {}
+  })();
 </script>
 
 </body>

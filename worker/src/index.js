@@ -101,6 +101,22 @@ export default {
       return json(req, { ogloszenia: results });
     }
 
+    // POST /wizyta — odnotuj wizytę (1 na sesję, pilnuje frontend), zwraca dzisiejszy licznik
+    if (req.method === 'POST' && path === '/wizyta') {
+      await env.DB.prepare(
+        `INSERT INTO wizyty (dzien, licznik) VALUES (date('now'), 1)
+         ON CONFLICT(dzien) DO UPDATE SET licznik = licznik + 1`
+      ).run();
+      const row = await env.DB.prepare(`SELECT licznik FROM wizyty WHERE dzien = date('now')`).first();
+      return json(req, { dzis: row.licznik });
+    }
+
+    // GET /wizyta — dzisiejszy licznik bez podbijania
+    if (req.method === 'GET' && path === '/wizyta') {
+      const row = await env.DB.prepare(`SELECT licznik FROM wizyty WHERE dzien = date('now')`).first();
+      return json(req, { dzis: row ? row.licznik : 0 });
+    }
+
     // POST /ogloszenia — powieś kartkę
     if (req.method === 'POST' && path === '/ogloszenia') {
       let cialo;
