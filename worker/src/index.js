@@ -2,6 +2,7 @@
 // plus Redakcja: panel administratora z botem zmieniającym stronę (src/redakcja.js)
 
 import { redakcja } from './redakcja.js';
+import { edytorStrony } from './edytor.js';
 
 const KATEGORIE = ['wydarzenie', 'wymiana', 'szukam', 'polecam', 'inne'];
 const LIMITY = { tytul: 60, tresc: 400, podpis: 40, kontakt: 80 };
@@ -87,6 +88,10 @@ export default {
     const path = url.pathname.replace(/\/+$/, '') || '/';
 
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(req) });
+
+    // /edytor — klikalny edytor strony (klucz sprawdza dopiero API pod /redakcja)
+    const ed = edytorStrony(req, path);
+    if (ed) return ed;
 
     // /redakcja — panel administratora z botem (klucz sprawdza moduł)
     if (path === '/redakcja' || path.startsWith('/redakcja/')) {

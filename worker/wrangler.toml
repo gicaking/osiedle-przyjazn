@@ -15,3 +15,6 @@ database_id = "e495707c-8f54-4cb6-b605-b34b97ca0b01"
 # Workers AI: tryb zapasowy bota redakcji, gdy nie ma ANTHROPIC_API_KEY
 [ai]
 binding = "AI"
+
+# Pliki edytora wczytywane jako tekst
+rules = [ { type = "Text", globs = ["**/*.html", "**/*.txt"] } ]

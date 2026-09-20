@@ -1,0 +1,232 @@
+/* Edytor klikalny strony Osiedla Przyjaźń. Wstrzykiwany do strony w trybie edycji przez /edytor. */
+(function () {
+  var ORIGIN = location.origin;
+  var klucz = localStorage.getItem('klucz_redakcji') || '';
+  var EDYTOWALNE = 'h1,h2,h3,p,li,dt,dd,blockquote,figcaption,label,.hand,.eyebrow,.status,.liczba b,.liczba span,.chip,.btn,.btn-powies,.btn-drugi,nav ul a,.logo';
+  var BLOKI = '.karta,.pomysl,.sztacheta,.liczba,.lista > li,.karteczka,.mini,.kanal,.ratowniczka';
+  var zmian = 0;
+
+  /* ---------- style i pasek ---------- */
+  var css = document.createElement('style');
+  css.setAttribute('data-edytor', 'style');
+  css.textContent = [
+    'body{padding-top:96px !important}',
+    '.reveal{opacity:1 !important;transform:none !important}',
+    '[data-edytowalne]{cursor:text;transition:outline-color .15s}',
+    '[data-edytowalne]:hover{outline:2px dashed #BF4630;outline-offset:2px}',
+    '[contenteditable="true"]{outline:2px solid #38604D !important;outline-offset:2px;background:rgba(242,201,76,.18)}',
+    'img[data-edytor-img]{cursor:pointer} img[data-edytor-img]:hover{outline:3px dashed #49789B;outline-offset:2px}',
+    '#edytor-pasek{position:fixed;top:0;left:0;right:0;z-index:99999;background:#24322B;color:#F3F4EE;font-family:system-ui,sans-serif;font-size:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 14px;box-shadow:0 2px 8px rgba(0,0,0,.3)}',
+    '#edytor-pasek b{font-size:15px;margin-right:6px}',
+    '#edytor-pasek button{font-family:system-ui,sans-serif;font-size:13px;font-weight:600;border:1.5px solid #F3F4EE;border-radius:8px;background:transparent;color:#F3F4EE;padding:6px 12px;cursor:pointer}',
+    '#edytor-pasek button:hover{background:rgba(255,255,255,.12)}',
+    '#edytor-pasek button.glowny{background:#F2C94C;color:#24322B;border-color:#F2C94C}',
+    '#edytor-pasek button.glowny:hover{background:#ffd966}',
+    '#edytor-pasek .info{margin-left:auto;opacity:.85}',
+    '#edytor-pasek .info.blad{color:#FFB4A8;opacity:1}',
+    '#edytor-blok{position:absolute;z-index:99998;display:none;gap:4px;background:#24322B;padding:4px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.3)}',
+    '#edytor-blok button{font-family:system-ui,sans-serif;font-size:12px;border:none;border-radius:6px;background:#F3F4EE;color:#24322B;padding:4px 8px;cursor:pointer}',
+    '#edytor-blok button.usun{background:#BF4630;color:#fff}',
+    '#edytor-link{position:absolute;z-index:99998;display:none;font-family:system-ui,sans-serif;font-size:12px;border:none;border-radius:6px;background:#49789B;color:#fff;padding:4px 8px;cursor:pointer}'
+  ].join('\n');
+  document.head.appendChild(css);
+
+  var pasek = document.createElement('div');
+  pasek.id = 'edytor-pasek'; pasek.setAttribute('data-edytor', 'pasek');
+  pasek.innerHTML = '<b>✍️ Tryb edycji</b><span>Kliknij tekst, żeby go zmienić. Najedź na kartę, żeby ją powielić lub usunąć. Kliknij zdjęcie, żeby je podmienić.</span>' +
+    '<button id="edytor-bot" title="Bot zmieni stronę według polecenia">🤖 Poproś bota</button>' +
+    '<button id="edytor-cofnij" title="Przywróć poprzednią opublikowaną wersję">↩ Cofnij ostatnią publikację</button>' +
+    '<button id="edytor-zamknij">Zamknij</button>' +
+    '<button id="edytor-zapisz" class="glowny">💾 Zapisz i opublikuj</button>' +
+    '<span class="info" id="edytor-info">Zmian: 0</span>';
+  document.body.appendChild(pasek);
+
+  var blokCtrl = document.createElement('div');
+  blokCtrl.id = 'edytor-blok'; blokCtrl.setAttribute('data-edytor', 'blok');
+  blokCtrl.innerHTML = '<button data-akcja="gora" title="Przesuń wyżej">↑</button><button data-akcja="dol" title="Przesuń niżej">↓</button><button data-akcja="powiel">Powiel</button><button data-akcja="usun" class="usun">Usuń</button>';
+  document.body.appendChild(blokCtrl);
+
+  var linkCtrl = document.createElement('button');
+  linkCtrl.id = 'edytor-link'; linkCtrl.setAttribute('data-edytor', 'link'); linkCtrl.textContent = '🔗 zmień adres';
+  document.body.appendChild(linkCtrl);
+
+  var plik = document.createElement('input');
+  plik.type = 'file'; plik.accept = 'image/*'; plik.style.display = 'none'; plik.setAttribute('data-edytor', 'plik');
+  document.body.appendChild(plik);
+
+  function info(t, blad) { var i = document.getElementById('edytor-info'); i.textContent = t; i.className = 'info' + (blad ? ' blad' : ''); }
+  function zmiana() { zmian++; info('Zmian: ' + zmian); }
+  function wEdytorze(el) { return !!el.closest('[data-edytor]'); }
+
+  /* ---------- oznaczanie ---------- */
+  document.querySelectorAll(EDYTOWALNE).forEach(function (el) {
+    if (wEdytorze(el) || el.closest('dialog') || el.closest('#edytor-pasek')) return;
+    el.setAttribute('data-edytowalne', '1');
+  });
+  document.querySelectorAll('img').forEach(function (img) { if (!wEdytorze(img)) img.setAttribute('data-edytor-img', '1'); });
+
+  /* ---------- edycja tekstu ---------- */
+  var aktywny = null;
+  document.addEventListener('click', function (e) {
+    if (wEdytorze(e.target)) return;
+    var a = e.target.closest('a');
+    var el = e.target.closest('[data-edytowalne]');
+    if (a && !el) { e.preventDefault(); }
+    if (!el) return;
+    e.preventDefault();
+    if (aktywny && aktywny !== el) zakoncz();
+    if (el.getAttribute('contenteditable') !== 'true') {
+      el.setAttribute('contenteditable', 'true');
+      el.setAttribute('data-edytor-przed', el.innerHTML);
+      el.focus();
+      aktywny = el;
+    }
+  }, true);
+  function zakoncz() {
+    if (!aktywny) return;
+    aktywny.removeAttribute('contenteditable');
+    if (aktywny.innerHTML !== aktywny.getAttribute('data-edytor-przed')) zmiana();
+    aktywny.removeAttribute('data-edytor-przed');
+    aktywny = null;
+  }
+  document.addEventListener('focusout', function (e) { if (aktywny && e.target === aktywny) setTimeout(function () { if (document.activeElement !== aktywny) zakoncz(); }, 50); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && aktywny) { aktywny.blur(); zakoncz(); }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); zapisz(); }
+  });
+  document.addEventListener('paste', function (e) {
+    if (!aktywny) return;
+    e.preventDefault();
+    var t = (e.clipboardData || window.clipboardData).getData('text/plain');
+    document.execCommand('insertText', false, t);
+  });
+
+  /* ---------- linki ---------- */
+  var linkCel = null;
+  document.addEventListener('mouseover', function (e) {
+    if (wEdytorze(e.target)) return;
+    var a = e.target.closest('a[href]');
+    if (a && !a.closest('#edytor-pasek')) {
+      linkCel = a;
+      var r = a.getBoundingClientRect();
+      linkCtrl.style.display = 'block';
+      linkCtrl.style.left = (window.scrollX + r.left) + 'px';
+      linkCtrl.style.top = (window.scrollY + r.bottom + 4) + 'px';
+    }
+    if (!a && !e.target.closest('#edytor-link')) linkCtrl.style.display = 'none';
+    var b = e.target.closest(BLOKI);
+    if (!b && !e.target.closest('#edytor-blok')) blokCtrl.style.display = 'none';
+    if (b && !wEdytorze(b)) {
+      blokCel = b;
+      var rb = b.getBoundingClientRect();
+      blokCtrl.style.display = 'flex';
+      blokCtrl.style.left = (window.scrollX + rb.right - blokCtrl.offsetWidth - 6) + 'px';
+      blokCtrl.style.top = (window.scrollY + rb.top - 30) + 'px';
+    }
+  });
+  linkCtrl.addEventListener('click', function () {
+    if (!linkCel) return;
+    var nowy = prompt('Adres linku (URL albo #sekcja):', linkCel.getAttribute('href'));
+    if (nowy !== null && nowy.trim()) { linkCel.setAttribute('href', nowy.trim()); zmiana(); }
+  });
+
+  /* ---------- bloki ---------- */
+  var blokCel = null;
+  blokCtrl.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || !blokCel) return;
+    var akcja = b.getAttribute('data-akcja');
+    if (akcja === 'usun') { if (confirm('Usunąć ten element?')) { blokCel.remove(); blokCel = null; blokCtrl.style.display = 'none'; zmiana(); } }
+    if (akcja === 'powiel') { var k = blokCel.cloneNode(true); blokCel.after(k); zmiana(); }
+    if (akcja === 'gora' && blokCel.previousElementSibling) { blokCel.previousElementSibling.before(blokCel); zmiana(); }
+    if (akcja === 'dol' && blokCel.nextElementSibling) { blokCel.nextElementSibling.after(blokCel); zmiana(); }
+  });
+
+  /* ---------- zdjęcia ---------- */
+  var imgCel = null;
+  document.addEventListener('click', function (e) {
+    var img = e.target.closest('img[data-edytor-img]'); if (!img) return;
+    e.preventDefault(); imgCel = img;
+    var wybor = prompt('Zdjęcie: wpisz 1, żeby wgrać plik z dysku, 2, żeby podać adres, 3, żeby zmienić opis (alt).', '1');
+    if (wybor === '1') plik.click();
+    else if (wybor === '2') { var u = prompt('Adres obrazka:', img.getAttribute('src')); if (u) { img.setAttribute('src', u); zmiana(); } }
+    else if (wybor === '3') { var al = prompt('Opis obrazka dla czytników ekranu:', img.getAttribute('alt') || ''); if (al !== null) { img.setAttribute('alt', al); zmiana(); } }
+  }, true);
+  plik.addEventListener('change', function () {
+    var f = plik.files[0]; if (!f || !imgCel) return;
+    if (f.size > 3 * 1024 * 1024) return alert('Plik jest za duży (limit 3 MB). Zmniejsz zdjęcie.');
+    info('Wgrywam zdjęcie…');
+    var fr = new FileReader();
+    fr.onload = function () {
+      var b64 = String(fr.result).split(',')[1];
+      api('/redakcja/plik', { nazwa: f.name, typ: f.type, dane: b64 }).then(function (d) {
+        imgCel.setAttribute('src', d.sciezka); zmiana(); info('Zdjęcie wgrane: ' + d.sciezka);
+      }).catch(function (e) { info(e.message, true); });
+    };
+    fr.readAsDataURL(f);
+    plik.value = '';
+  });
+
+  /* ---------- API ---------- */
+  function api(sciezka, body) {
+    return fetch(ORIGIN + sciezka, { method: body ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json', 'X-Admin-Key': klucz }, body: body ? JSON.stringify(body) : undefined })
+      .then(function (r) { return r.json().catch(function () { return { blad: 'Nieczytelna odpowiedź serwera.' }; }).then(function (d) { if (!r.ok || d.blad) throw new Error(d.blad || ('Błąd ' + r.status)); return d; }); });
+  }
+
+  /* ---------- serializacja ---------- */
+  function serializuj() {
+    if (aktywny) zakoncz();
+    var klon = document.documentElement.cloneNode(true);
+    klon.querySelectorAll('[data-edytor]').forEach(function (n) { n.remove(); });
+    klon.querySelectorAll('[data-edytowalne],[contenteditable],[data-edytor-przed],[data-edytor-img]').forEach(function (n) {
+      n.removeAttribute('data-edytowalne'); n.removeAttribute('contenteditable'); n.removeAttribute('data-edytor-przed'); n.removeAttribute('data-edytor-img');
+    });
+    klon.querySelectorAll('script[data-edytor-wylaczony]').forEach(function (s) { s.removeAttribute('type'); s.removeAttribute('data-edytor-wylaczony'); });
+    var body = klon.querySelector('body'); if (body) body.removeAttribute('style');
+    return '<!DOCTYPE html>\n' + klon.outerHTML + '\n';
+  }
+
+  /* ---------- akcje paska ---------- */
+  function zapisz() {
+    if (aktywny) zakoncz();
+    if (!zmian) return info('Nie ma zmian do zapisania.');
+    var opis = prompt('Krótko, co zmieniasz (trafi do historii zmian):', '');
+    if (opis === null) return;
+    info('Publikuję…');
+    api('/redakcja/publikuj-html', { html: serializuj(), opis: opis })
+      .then(function (d) { zmian = 0; info('Opublikowane (' + d.krotki + '). Strona odświeży się w ciągu około minuty.'); })
+      .catch(function (e) {
+        if (/wymus/.test(e.message) && confirm(e.message + '\n\nOpublikować mimo to?')) {
+          return api('/redakcja/publikuj-html', { html: serializuj(), opis: opis, wymus: true }).then(function (d) { zmian = 0; info('Opublikowane (' + d.krotki + ').'); });
+        }
+        info(e.message, true);
+      });
+  }
+  document.getElementById('edytor-zapisz').onclick = zapisz;
+  document.getElementById('edytor-cofnij').onclick = function () {
+    if (!confirm('Przywrócić poprzednią opublikowaną wersję strony? Niezapisane zmiany w edytorze przepadną.')) return;
+    info('Cofam…');
+    api('/redakcja/cofnij', {}).then(function (d) { info('Cofnięte (' + d.krotki + '). Odśwież edytor za minutę.'); zmian = 0; }).catch(function (e) { info(e.message, true); });
+  };
+  document.getElementById('edytor-zamknij').onclick = function () {
+    if (zmian && !confirm('Masz niezapisane zmiany. Zamknąć bez publikacji?')) return;
+    zmian = 0; location.href = ORIGIN + '/redakcja';
+  };
+  document.getElementById('edytor-bot').onclick = function () {
+    var polecenie = prompt('Co bot ma zmienić na stronie? (np. Zmień godzinę spotkań na 19:00)');
+    if (!polecenie) return;
+    info('Bot pracuje (10 do 60 s)…');
+    api('/redakcja/bot-html', { html: serializuj(), polecenie: polecenie }).then(function (d) {
+      if (d.pytanie) { alert('Bot pyta: ' + d.pytanie); info('Bot zadał pytanie, uzupełnij polecenie.'); return; }
+      var html = d.html;
+      html = html.replace(/<head>/i, '<head><base href="https://osiedleprzyjazn.waw.pl/" data-edytor="base">');
+      html = html.replace(/<script(?![^>]*type=["']application\/ld\+json["'])([^>]*)>/gi, '<script type="text/plain" data-edytor-wylaczony="1"$1>');
+      html = html.replace(/<\/body>/i, '<script data-edytor="skrypt" src="' + ORIGIN + '/edytor.js?z=' + (zmian + 1) + '"><\/script></body>');
+      sessionStorage.setItem('edytor_zmian', String(zmian + 1));
+      sessionStorage.setItem('edytor_info', 'Bot: ' + d.opis + '. Sprawdź i kliknij Zapisz i opublikuj.');
+      document.open(); document.write(html); document.close();
+    }).catch(function (e) { info(e.message, true); });
+  };
+  var odlozone = sessionStorage.getItem('edytor_zmian');
+  if (odlozone) { zmian = Number(odlozone) || 0; sessionStorage.removeItem('edytor_zmian'); info(sessionStorage.getItem('edytor_info') || ('Zmian: ' + zmian)); sessionStorage.removeItem('edytor_info'); }
+  window.addEventListener('beforeunload', function (e) { if (zmian) { e.preventDefault(); e.returnValue = ''; } });
+})();

@@ -2,6 +2,8 @@
 // Przepływ: polecenie po polsku -> bot proponuje edycje (szukaj/zamień) -> podgląd -> publikacja
 // jako commit na GitHub (GitHub Pages wdraża w ok. minutę). Każdą zmianę da się cofnąć.
 
+import { edytorApi } from './edytor.js';
+
 const GH = { owner: 'gicaking', repo: 'osiedle-przyjazn', branch: 'master', plik: 'index.html' };
 const MODEL = 'claude-opus-5';
 const MODEL_ZAPASOWY = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
@@ -107,35 +109,56 @@ function wyciagnijJson(txt) {
   return JSON.parse(t.slice(a, b + 1));
 }
 
+async function wolajClaude(env, body, zBeta) {
+  const headers = {
+    'x-api-key': env.ANTHROPIC_API_KEY.trim(),
+    'anthropic-version': '2023-06-01',
+    'content-type': 'application/json',
+  };
+  const b = { ...body };
+  if (zBeta) { headers['anthropic-beta'] = 'server-side-fallback-2026-07-01'; b.fallbacks = 'default'; }
+  const r = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers, body: JSON.stringify(b) });
+  const txt = await r.text();
+  if (!r.ok) {
+    console.error('Claude API', r.status, txt.slice(0, 500));
+    // gdy problem dotyczy opcji beta (fallbacks), spróbuj bez nich
+    if (zBeta && r.status === 400 && /fallback|beta/i.test(txt)) return wolajClaude(env, body, false);
+    let opis = txt.slice(0, 300);
+    try { opis = JSON.parse(txt).error?.message || opis; } catch {}
+    if (r.status === 401) opis = 'klucz ANTHROPIC_API_KEY jest nieprawidłowy (401). ' + opis;
+    if (r.status === 403) opis = 'klucz nie ma uprawnień (403). ' + opis;
+    throw new Error(`Claude API ${r.status}: ${opis}`);
+  }
+  return JSON.parse(txt);
+}
+
 async function zapytajClaude(env, html, polecenie, kontekst) {
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': env.ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
-      'anthropic-beta': 'server-side-fallback-2026-07-01',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: 16000,
-      fallbacks: 'default',
-      output_config: { effort: 'high' },
-      system: [{ type: 'text', text: SYSTEM }],
-      messages: [{
-        role: 'user',
-        content: [
-          { type: 'text', text: `Obecny plik index.html:\n\n${html}`, cache_control: { type: 'ephemeral' } },
-          { type: 'text', text: (kontekst ? `Kontekst poprzedniej propozycji: ${kontekst}\n\n` : '') + `Polecenie administratora: ${polecenie}` },
-        ],
-      }],
-    }),
-  });
-  if (!r.ok) throw new Error(`Claude API: ${r.status} ${(await r.text()).slice(0, 300)}`);
-  const d = await r.json();
+  const d = await wolajClaude(env, {
+    model: MODEL,
+    max_tokens: 16000,
+    output_config: { effort: 'high' },
+    system: [{ type: 'text', text: SYSTEM }],
+    messages: [{
+      role: 'user',
+      content: [
+        { type: 'text', text: `Obecny plik index.html:\n\n${html}`, cache_control: { type: 'ephemeral' } },
+        { type: 'text', text: (kontekst ? `Kontekst poprzedniej propozycji: ${kontekst}\n\n` : '') + `Polecenie administratora: ${polecenie}` },
+      ],
+    }],
+  }, true);
   if (d.stop_reason === 'refusal') throw new Error('Bot odmówił wykonania tego polecenia.');
   const txt = (d.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
   return { odp: wyciagnijJson(txt), model: d.model || MODEL };
+}
+
+async function testBota(env) {
+  if (!env.ANTHROPIC_API_KEY) return { ok: false, tryb: 'zapasowy', info: 'Brak ANTHROPIC_API_KEY, bot użyje Workers AI.' };
+  const d = await wolajClaude(env, {
+    model: MODEL, max_tokens: 50,
+    messages: [{ role: 'user', content: 'Odpowiedz jednym słowem: OK' }],
+  }, true);
+  const txt = (d.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+  return { ok: true, tryb: 'claude', model: d.model, odpowiedz: txt.slice(0, 40), klucz: env.ANTHROPIC_API_KEY.trim().slice(0, 14) + '…' };
 }
 
 async function zapytajZapasowy(env, html, polecenie, kontekst) {
@@ -201,10 +224,12 @@ export const REDAKCJA_HTML = `<!DOCTYPE html>
   code{background:#e9ebe4;padding:1px 5px;border-radius:4px}
 </style></head><body>
 <h1>✍️ Redakcja strony</h1>
+<div class="karta" style="background:#FDF6DC"><b>Wolisz klikać niż pisać?</b> Otwórz <a href="/edytor">edytor klikalny</a>: strona w trybie edycji, klikasz tekst i poprawiasz na miejscu, potem Zapisz i opublikuj.</div>
 <p class="pod">Napisz botowi, co zmienić na osiedleprzyjazn.waw.pl. Bot pokaże, co dokładnie zmieni, a Ty zdecydujesz, czy opublikować. Każdą publikację da się cofnąć.</p>
 
 <label for="klucz">Klucz redakcji (zapamięta się na tym urządzeniu)</label>
 <input id="klucz" type="password" placeholder="wklej klucz">
+<button class="cichy" id="btn-bot">Sprawdź bota</button> <span id="bot-info"></span>
 
 <label for="polecenie">Co zmienić?</label>
 <textarea id="polecenie" placeholder="np. Zmień godzinę spotkań na 19:00. Albo: Dodaj do Kuźni pomysłów kartę o osiedlowej wymiance książek w każdą pierwszą sobotę miesiąca."></textarea>
@@ -298,6 +323,11 @@ export const REDAKCJA_HTML = `<!DOCTYPE html>
     try { const p = await api('/redakcja/cofnij', {}); status('Cofnięte. Commit: ' + p.krotki + '. Strona odświeży się w ciągu około minuty.'); historia(); }
     catch (e) { status(e.message, true); }
   };
+  $('btn-bot').onclick = async () => {
+    $('bot-info').textContent = 'Pytam bota…';
+    try { const d = await api('/redakcja/bot'); $('bot-info').textContent = d.ok ? ('Bot działa: ' + d.model + ' (klucz ' + d.klucz + ')') : d.info; }
+    catch (e) { $('bot-info').textContent = e.message; $('bot-info').className = 'blad'; }
+  };
   $('btn-zaproponuj').onclick = () => zaproponuj();
   if (klucz.value) historia(); else $('historia').innerHTML = '<li>Wklej klucz, żeby zobaczyć historię.</li>';
   klucz.addEventListener('change', historia);
@@ -313,6 +343,13 @@ export async function redakcja(req, env, path, json) {
   if (!env.GITHUB_TOKEN) return json(req, { blad: 'Brak GITHUB_TOKEN w sekretach workera.' }, 500);
 
   try {
+    const zEdytora = await edytorApi(req, env, path, json);
+    if (zEdytora) return zEdytora;
+
+    if (req.method === 'GET' && path === '/redakcja/bot') {
+      return json(req, await testBota(env));
+    }
+
     if (req.method === 'GET' && path === '/redakcja/stan') {
       const historia = await ghHistoria(env);
       return json(req, { historia, bot: Boolean(env.ANTHROPIC_API_KEY) });
@@ -387,4 +424,5 @@ export async function redakcja(req, env, path, json) {
   return null;
 }
 
+export { ghPobierz, ghZapisz, ghHistoria, ghHeaders, textToB64, zastosujEdycje, sprawdzBezpieczenstwo, zapytajBota, GH };
 export const _test = { zastosujEdycje, sprawdzBezpieczenstwo, wyciagnijJson, textToB64, b64ToText };
