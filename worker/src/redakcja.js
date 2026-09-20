@@ -308,7 +308,8 @@ export async function redakcja(req, env, path, json) {
   if (req.method === 'GET' && path === '/redakcja') {
     return new Response(REDAKCJA_HTML, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
   }
-  if (req.headers.get('X-Admin-Key') !== env.ADMIN_KEY) return json(req, { blad: 'Zły klucz redakcji.' }, 403);
+  const klucz = req.headers.get('X-Admin-Key') || '';
+  if (!klucz || (klucz !== env.ADMIN_KEY && klucz !== env.REDAKCJA_KEY)) return json(req, { blad: 'Zły klucz redakcji.' }, 403);
   if (!env.GITHUB_TOKEN) return json(req, { blad: 'Brak GITHUB_TOKEN w sekretach workera.' }, 500);
 
   try {
