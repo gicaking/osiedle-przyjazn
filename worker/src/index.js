@@ -1,4 +1,7 @@
 // Tablica sąsiedzka Osiedla Przyjaźń — API (Cloudflare Worker + D1)
+// plus Redakcja: panel administratora z botem zmieniającym stronę (src/redakcja.js)
+
+import { redakcja } from './redakcja.js';
 
 const KATEGORIE = ['wydarzenie', 'wymiana', 'szukam', 'polecam', 'inne'];
 const LIMITY = { tytul: 60, tresc: 400, podpis: 40, kontakt: 80 };
@@ -84,6 +87,12 @@ export default {
     const path = url.pathname.replace(/\/+$/, '') || '/';
 
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(req) });
+
+    // /redakcja — panel administratora z botem (klucz sprawdza moduł)
+    if (path === '/redakcja' || path.startsWith('/redakcja/')) {
+      const odp = await redakcja(req, env, path, json);
+      if (odp) return odp;
+    }
 
     // GET /gospodarz — panel moderacji (klucz sprawdza dopiero DELETE)
     if (req.method === 'GET' && path === '/gospodarz') {

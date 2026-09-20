@@ -20,3 +20,17 @@ INSERT INTO ogloszenia (tytul, tresc, kategoria, podpis) VALUES
 ('Meldunki dla Ratowniczki', 'Ratowniczka Osiedla przyjmuje zgłoszenia kotów do pogłaskania oraz kałuż do obserwacji. Kolejka bywa długa, prosimy o cierpliwość.', 'inne', 'sztab Ratowniczki'),
 ('Archiwum Głosów szuka uszu', 'Nagrywamy wspomnienia najstarszych sąsiadów. Jeśli Twoja babcia, dziadek albo Ty macie historię z osiedla, zapraszamy do opowiedzenia jej.', 'szukam', 'kronikarze'),
 ('Twoja kartka', 'To miejsce czeka na Twoje ogłoszenie. Kliknij Powieś kartkę i podziel się czymś z sąsiadami.', 'inne', 'tablica');
+
+-- Redakcja: propozycje zmian strony przygotowane przez bota (tworzona automatycznie przez workera)
+CREATE TABLE IF NOT EXISTS propozycje (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  polecenie TEXT NOT NULL,
+  opis TEXT,
+  edycje TEXT,
+  tresc TEXT NOT NULL,
+  baza_sha TEXT,
+  model TEXT,
+  status TEXT NOT NULL DEFAULT 'nowa',
+  commit_sha TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
