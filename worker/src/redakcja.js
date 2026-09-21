@@ -109,24 +109,29 @@ function wyciagnijJson(txt) {
   return JSON.parse(t.slice(a, b + 1));
 }
 
+function maKluczClaude(env) {
+  return Boolean((env.ANTHROPIC_API_KEY && env.ANTHROPIC_API_KEY.trim()) || (env.ANTHROPIC_AUTH_TOKEN && env.ANTHROPIC_AUTH_TOKEN.trim()));
+}
+
 async function wolajClaude(env, body, zBeta) {
-  const headers = {
-    'x-api-key': env.ANTHROPIC_API_KEY.trim(),
-    'anthropic-version': '2023-06-01',
-    'content-type': 'application/json',
-  };
+  // Dwa sposoby logowania: klucz API (x-api-key) albo token OAuth z subskrypcji Claude (Bearer, jak w OpenClaw)
+  const oauth = env.ANTHROPIC_AUTH_TOKEN && env.ANTHROPIC_AUTH_TOKEN.trim();
+  const headers = { 'anthropic-version': '2023-06-01', 'content-type': 'application/json' };
+  const bety = [];
+  if (oauth) { headers['Authorization'] = `Bearer ${oauth}`; bety.push('oauth-2025-04-20'); }
+  else headers['x-api-key'] = env.ANTHROPIC_API_KEY.trim();
   const b = { ...body };
-  if (zBeta) { headers['anthropic-beta'] = 'server-side-fallback-2026-07-01'; b.fallbacks = 'default'; }
+  if (zBeta) { bety.push('server-side-fallback-2026-07-01'); b.fallbacks = 'default'; }
+  if (bety.length) headers['anthropic-beta'] = bety.join(',');
   const r = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers, body: JSON.stringify(b) });
   const txt = await r.text();
   if (!r.ok) {
     console.error('Claude API', r.status, txt.slice(0, 500));
-    // gdy problem dotyczy opcji beta (fallbacks), spróbuj bez nich
     if (zBeta && r.status === 400 && /fallback|beta/i.test(txt)) return wolajClaude(env, body, false);
     let opis = txt.slice(0, 300);
     try { opis = JSON.parse(txt).error?.message || opis; } catch {}
-    if (r.status === 401) opis = 'klucz ANTHROPIC_API_KEY jest nieprawidłowy (401). ' + opis;
-    if (r.status === 403) opis = 'klucz nie ma uprawnień (403). ' + opis;
+    if (r.status === 401) opis = (oauth ? 'token ANTHROPIC_AUTH_TOKEN jest nieprawidłowy lub wygasł (401). ' : 'klucz ANTHROPIC_API_KEY jest nieprawidłowy (401). ') + opis;
+    if (r.status === 403) opis = 'brak uprawnień (403). ' + opis;
     throw new Error(`Claude API ${r.status}: ${opis}`);
   }
   return JSON.parse(txt);
@@ -152,17 +157,18 @@ async function zapytajClaude(env, html, polecenie, kontekst) {
 }
 
 async function testBota(env) {
-  if (!env.ANTHROPIC_API_KEY) return { ok: false, tryb: 'zapasowy', info: 'Brak ANTHROPIC_API_KEY, bot użyje Workers AI.' };
+  if (!maKluczClaude(env)) return { ok: false, tryb: 'zapasowy', info: 'Brak ANTHROPIC_API_KEY ani ANTHROPIC_AUTH_TOKEN, bot użyje Workers AI (tryb zapasowy).' };
   const d = await wolajClaude(env, {
     model: MODEL, max_tokens: 50,
     messages: [{ role: 'user', content: 'Odpowiedz jednym słowem: OK' }],
   }, true);
   const txt = (d.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
-  return { ok: true, tryb: 'claude', model: d.model, odpowiedz: txt.slice(0, 40), klucz: env.ANTHROPIC_API_KEY.trim().slice(0, 14) + '…' };
+  const k = (env.ANTHROPIC_AUTH_TOKEN && env.ANTHROPIC_AUTH_TOKEN.trim()) || env.ANTHROPIC_API_KEY.trim();
+  return { ok: true, tryb: env.ANTHROPIC_AUTH_TOKEN ? 'claude (oauth)' : 'claude', model: d.model, odpowiedz: txt.slice(0, 40), klucz: k.slice(0, 14) + '…' };
 }
 
 async function zapytajZapasowy(env, html, polecenie, kontekst) {
-  if (!env.AI) throw new Error('Brak ANTHROPIC_API_KEY i brak bindingu AI. Ustaw sekret: npx wrangler secret put ANTHROPIC_API_KEY');
+  if (!env.AI) throw new Error('Brak klucza Claude i brak bindingu AI. Ustaw sekret ANTHROPIC_API_KEY albo ANTHROPIC_AUTH_TOKEN.');
   const out = await env.AI.run(MODEL_ZAPASOWY, {
     messages: [
       { role: 'system', content: SYSTEM },
@@ -174,7 +180,7 @@ async function zapytajZapasowy(env, html, polecenie, kontekst) {
 }
 
 async function zapytajBota(env, html, polecenie, kontekst) {
-  return env.ANTHROPIC_API_KEY ? zapytajClaude(env, html, polecenie, kontekst) : zapytajZapasowy(env, html, polecenie, kontekst);
+  return maKluczClaude(env) ? zapytajClaude(env, html, polecenie, kontekst) : zapytajZapasowy(env, html, polecenie, kontekst);
 }
 
 // ---------- D1 ----------
@@ -325,7 +331,7 @@ export const REDAKCJA_HTML = `<!DOCTYPE html>
   };
   $('btn-bot').onclick = async () => {
     $('bot-info').textContent = 'Pytam bota…';
-    try { const d = await api('/redakcja/bot'); $('bot-info').textContent = d.ok ? ('Bot działa: ' + d.model + ' (klucz ' + d.klucz + ')') : d.info; }
+    try { const d = await api('/redakcja/bot'); $('bot-info').textContent = d.ok ? ('Bot działa: ' + d.model + ', ' + d.tryb + ' (klucz ' + d.klucz + ')') : d.info; }
     catch (e) { $('bot-info').textContent = e.message; $('bot-info').className = 'blad'; }
   };
   $('btn-zaproponuj').onclick = () => zaproponuj();
@@ -352,7 +358,7 @@ export async function redakcja(req, env, path, json) {
 
     if (req.method === 'GET' && path === '/redakcja/stan') {
       const historia = await ghHistoria(env);
-      return json(req, { historia, bot: Boolean(env.ANTHROPIC_API_KEY) });
+      return json(req, { historia, bot: maKluczClaude(env) });
     }
 
     const jedna = path.match(/^\/redakcja\/propozycja\/(\d+)$/);
